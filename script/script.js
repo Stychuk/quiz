@@ -1,3 +1,17 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-app.js";
+import { getDatabase, ref, child, get, set, push } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD2AncLk4zw1dMPUR1yZuOAnmDER7wiVxo",
+    authDomain: "quiz-test-65611.firebaseapp.com",
+    databaseURL: "https://quiz-test-65611-default-rtdb.firebaseio.com",
+    projectId: "quiz-test-65611",
+    storageBucket: "quiz-test-65611.appspot.com",
+    messagingSenderId: "454184163292",
+    appId: "1:454184163292:web:adad8c203f05cea2212119"
+  };
+
+  const app = initializeApp(firebaseConfig);
 
 // обработчик событий, который отслеживает загрузку контента
 document.addEventListener('DOMContentLoaded', function(){
@@ -10,86 +24,39 @@ document.addEventListener('DOMContentLoaded', function(){
     const prevButton = document.querySelector('#prev');
     const sendButton = document.querySelector('#send');
 
-// объект содержащий вопросы и ответы
-    const questions = [
-        {
-            question: "Какого цвета бургер?",
-            answers: [
-                {
-                    title: 'Стандарт',
-                    url: './image/burger.png'
-                },
-                {
-                    title: 'Черный',
-                    url: './image/burgerBlack.png'
-                }
-            ],
-            type: 'radio'
-        },
-        {
-            question: "Из какого мяса котлета?",
-            answers: [
-                {
-                    title: 'Курица',
-                    url: './image/chickenMeat.png'
-                },
-                {
-                    title: 'Говядина',
-                    url: './image/beefMeat.png'
-                },
-                {
-                    title: 'Свинина',
-                    url: './image/porkMeat.png'
-                }
-            ],
-            type: 'radio'
-        },
-        {
-            question: "Дополнительные ингредиенты?",
-            answers: [
-                {
-                    title: 'Помидор',
-                    url: './image/tomato.png'
-                },
-                {
-                    title: 'Огурец',
-                    url: './image/cucumber.png'
-                },
-                {
-                    title: 'Салат',
-                    url: './image/salad.png'
-                },
-                {
-                    title: 'Лук',
-                    url: './image/onion.png'
-                }
-            ],
-            type: 'checkbox'
-        },
-        {
-            question: "Добавить соус?",
-            answers: [
-                {
-                    title: 'Чесночный',
-                    url: './image/sauce1.png'
-                },
-                {
-                    title: 'Томатный',
-                    url: './image/sauce2.png'
-                },
-                {
-                    title: 'Горчичный',
-                    url: './image/sauce3.png'
-                }
-            ],
-            type: 'radio'
-        }
-    ];
+    // функция получения данных
+    const getData = () => {
+        formAnswers.textContent = 'LOAD';
+
+        const dbRef = ref(getDatabase());
+
+        get(child(dbRef, 'questions')).then((snapshot) => {
+            if (snapshot.exists()) {
+                playTest(snapshot.val());
+            } else {
+                formAnswers.textContent = 'Ошибка загрузки данных!';
+                console.error("No data available");
+            }
+        }).catch((error) => {
+            console.error(error);
+        });
+
+        /*setTimeout(() => {
+            fetch('./questions.json')
+                .then(res => res.json())
+                .then(obj => playTest(obj.questions))
+                .catch(err => {
+                    formAnswers.textContent = 'Ошибка загрузки данных!'
+                    console.error(err);
+                });
+
+        }, 1000);*/
+    }
 
     // обработчики событий открытия/закрытия модального окна
     btnOpenModal.addEventListener('click', () => {
         modalBlock.classList.add('d-block');
-        playTest();
+        getData();
     });
 
     closeModal.addEventListener('click', () => {
@@ -97,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 
     // функция запуска тестирования
-    const playTest = () => {
+    const playTest = (questions) => {
 
         const finalAnswers = [];
 
@@ -108,20 +75,6 @@ document.addEventListener('DOMContentLoaded', function(){
         const renderAnswers = (index) => {
             questions[index].answers.forEach((answer) => {
                 const answerItem = document.createElement('div');
-
-                /*if(numberQuestion === 0) {
-                    prevButton.style.display = "none";
-                }
-                else {
-                    prevButton.style.display = "block";
-                }
-
-                if(numberQuestion === questions.length-1) {
-                    nextButton.style.display = "none";
-                }
-                else {
-                    nextButton.style.display = "block";
-                }*/
 
                 answerItem.classList.add('answers-item', 'd-flex', 'justify-content-center');
 
@@ -223,6 +176,13 @@ document.addEventListener('DOMContentLoaded', function(){
         sendButton.onclick = () => {
             checkAnswer();
             numberQuestion++;
+
+            const contactsRef = ref(getDatabase(), 'contacts');
+
+            push(ref(getDatabase(), 'contacts'), {
+                ...finalAnswers
+            });
+
             renderQuestions(numberQuestion);
             console.log(finalAnswers);
         }
